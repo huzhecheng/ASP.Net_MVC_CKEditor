@@ -1,0 +1,267 @@
+﻿
+@{
+	ViewBag.Title = "文章看板";
+}
+<style>
+	.masonry {
+		-webkit-column-count: 1;
+		column-count: 1;
+		-webkit-column-gap: 0;
+		column-gap: 0;
+		counter-reset: item-counter;
+		padding: 0 5%;
+	}
+
+	.ellipsis {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	img {
+		width: 100%;
+		border-radius: 5px 5px 0 0;
+		border-bottom: .1px solid #d8d8d8;
+	}
+
+	.item {
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+		-webkit-column-break-inside: avoid;
+		break-inside: avoid;
+		padding: 10px;
+		counter-increment: item-counter;
+	}
+
+	.item__content {
+		position: relative;
+		display: -webkit-box;
+		display: -ms-flexbox;
+		display: flex;
+		-webkit-box-orient: vertical;
+		-webkit-box-direction: normal;
+		-ms-flex-direction: column;
+		flex-direction: column;
+		-webkit-box-pack: center;
+		-ms-flex-pack: center;
+		-webkit-box-align: center;
+		-ms-flex-align: center;
+		align-items: center;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+		border: 1px solid #eee;
+		border-radius: 5px;
+		box-shadow: 0 1px 2px #ddd;
+		cursor: pointer;
+	}
+
+		.item__content:hover > .item__title {
+			color: #1731ab;
+			text-decoration: underline;
+		}
+
+			.item__content:hover > .item__title:before {
+				-webkit-transform: rotateZ(180deg);
+				-moz-transform: rotateZ(180deg);
+				-o-transform: rotateZ(180deg);
+				-ms-transform: rotateZ(180deg);
+				transform: rotateY(180deg);
+			}
+
+		.item__content:hover .icon__heart {
+			color: #fe5b8e;
+			text-shadow: initial;
+		}
+
+	.icon__heart {
+		color: #fff;
+		float: right;
+		text-shadow: -1px 0 #d8d8d8, 0 1px #d8d8d8, 1px 0 #d8d8d8, 0 -1px #d8d8d8;
+		transition: .1s ease-in;
+	}
+
+	.item__title {
+		margin: 2.5% 1.5%;
+		width: 93%;
+		color: #000;
+		font-size: 14px;
+		line-height: 1.5;
+		letter-spacing: 2.5px;
+		font-weight: normal;
+	}
+
+		.item__title:before {
+			font-family: FontAwesome;
+			font-size: 14px;
+			content: "\f02b";
+			color: #ff9814;
+			display: inline-block;
+			transition: .3s ease-in-out transform;
+		}
+
+	.item__date {
+		margin: 2.5% 3.5%;
+		width: 93%;
+		color: rgb(48, 141, 210);
+		letter-spacing: 1.5px;
+		font-size: 12px;
+	}
+
+	.loading {
+		width: 100%;
+		height: 80px;
+		text-align: center;
+	}
+
+		.loading > img {
+			width: 40px;
+			height: 40px;
+		}
+
+	.show {
+		visibility: initial;
+	}
+
+	.hide {
+		visibility: hidden;
+	}
+
+	.normal > img {
+		max-height: 175px;
+	}
+
+	.small > img {
+		max-height: 205px;
+	}
+
+	.medium > img {
+		max-height: 235px;
+	}
+
+	.large > img {
+		max-height: 265px;
+	}
+
+	@@media screen and (min-width: 400px) {
+		.masonry {
+			-webkit-column-count: 2;
+			column-count: 2;
+		}
+	}
+
+	@@media screen and (min-width: 600px) {
+		.masonry {
+			-webkit-column-count: 3;
+			column-count: 3;
+		}
+	}
+
+	@@media screen and (min-width: 800px) {
+		.masonry {
+			-webkit-column-count: 4;
+			column-count: 4;
+		}
+	}
+
+	@@media screen and (min-width: 1100px) {
+		.masonry {
+			-webkit-column-count: 5;
+			column-count: 5;
+		}
+	}
+</style>
+
+<div id="app" v-clock>
+	<h1 style="text-align:center;letter-spacing: 3px;">文章看板</h1>
+	<div class="masonry">
+		<div class="item" v-for="item in List">
+			<a :href="'/Home/Article?Id=' + item.Id" style="text-decoration:none;">
+				<div class="item__content" v-bind:class=item.Class>
+					<img :src=item.ImgUrl />
+					<h3 class="item__title">
+						${ item.Title }
+					</h3>
+					<h3 class="item__date">
+						${ item.Date }
+						<i class="fa fa-lg fa-heart icon__heart"></i>
+					</h3>
+				</div>
+			</a>
+		</div>
+	</div>
+	<div class="loading" v-bind:class="[isShow ? 'show' : 'hide']">
+		<p style="font-weight:bolder;">正在載入內容 ．．．</p>
+		<img src="~/Images/Loading.svg" />
+	</div>
+</div>
+
+@section scripts{
+	<script>
+		let app = new Vue({
+			el: '#app',
+			delimiters: ['${', '}'],
+			data: {
+				bottom: false,
+				List: [],
+				Pageinfo: {},
+				isShow: false
+			},
+			mounted() {
+				var self = this;
+
+				window.addEventListener('scroll', function () {
+					self.bottom = self.bottomVisible();
+				})
+
+				$.post('/Home/GetList',
+					{ "page": 1, "pagesize": 50 },
+					function (data) {
+						self.List = data.list;
+						self.Pageinfo = data.pageinfo;
+					}
+				);
+			},
+			methods: {
+				bottomVisible() {
+					const scrollY = window.scrollY;
+					const visible = document.body.clientHeight;
+					const pageHeight = document.documentElement.scrollHeight;
+					const bottomOfPage = visible + scrollY >= pageHeight;
+
+					return bottomOfPage || pageHeight < visible;
+				},
+			},
+			watch: {
+				bottom(bottom) {
+					if (bottom) {
+
+						let self = this; self.isShow = true;
+
+						clearTimeout(timer);
+
+						var timer = setTimeout(function () {
+
+							if (self.Pageinfo.IsOverange)
+								self.Pageinfo.NowPage = 1;
+							else
+								self.Pageinfo.NowPage = self.Pageinfo.NowPage + 1
+
+							$.post('/Home/GetList',
+								{ "page": self.Pageinfo.NowPage, "pagesize": 50 },
+								function (data) {
+
+									data.list.forEach((obj) => {
+										self.List.push(obj);
+									});
+
+									self.Pageinfo = data.pageinfo;
+									self.isShow = false;
+								}
+							);
+						}, 700);
+					}
+				}
+			}
+		});
+	</script>
+}

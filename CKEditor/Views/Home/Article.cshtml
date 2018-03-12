@@ -1,0 +1,193 @@
+﻿
+@{
+	ViewBag.Title = "文章";
+}
+
+<link href="~/Content/defaultStyle.css" rel="stylesheet" />
+<style>
+	.masonry {
+		-webkit-column-count: 1;
+		column-count: 1;
+		-webkit-column-gap: 0;
+		column-gap: 0;
+		counter-reset: item-counter;
+		padding: 0 10%;
+		width: 80%;
+	}
+
+	hr {
+		border: 0;
+		height: 0;
+		border-top: 1px solid rgba(0,0,0,0.1);
+		border-bottom: 1px solid rgba(255,255,255,0.3);
+	}
+
+	body:hover .prev,
+	body:hover .next,
+	body:focus .prev,
+	body:focus .next {
+		display: block;
+		-webkit-animation-name: hvr-wobble-vertical;
+		animation-name: hvr-wobble-vertical;
+		-webkit-animation-duration: 1s;
+		animation-duration: 1s;
+		-webkit-animation-timing-function: ease-in-out;
+		animation-timing-function: ease-in-out;
+		-webkit-animation-iteration-count: 1;
+		animation-iteration-count: 1;
+	}
+
+	.prev, .next {
+		position: fixed;
+		cursor: pointer;
+		z-index: 999;
+		width: 45px;
+		height: 45px;
+		color: #ffa500;
+		font-size: 45px;
+		display: none;
+	}
+
+	.prev {
+		top: 50%;
+		left: 1.5%;
+	}
+
+	.next {
+		top: 50%;
+		right: 1.5%;
+		text-align: right;
+	}
+
+	@@media screen and (max-width: 768px) {
+		iframe {
+			width: 100% !important;
+		}
+	}
+
+	/* Wobble Vertical */
+	@@-webkit-keyframes hvr-wobble-vertical {
+		16.65% {
+			-webkit-transform: translateY(8px);
+			transform: translateY(8px);
+		}
+
+		33.3% {
+			-webkit-transform: translateY(-6px);
+			transform: translateY(-6px);
+		}
+
+		49.95% {
+			-webkit-transform: translateY(4px);
+			transform: translateY(4px);
+		}
+
+		66.6% {
+			-webkit-transform: translateY(-2px);
+			transform: translateY(-2px);
+		}
+
+		83.25% {
+			-webkit-transform: translateY(1px);
+			transform: translateY(1px);
+		}
+
+		100% {
+			-webkit-transform: translateY(0);
+			transform: translateY(0);
+		}
+	}
+
+	@@keyframes hvr-wobble-vertical {
+		16.65% {
+			-webkit-transform: translateY(8px);
+			transform: translateY(8px);
+		}
+
+		33.3% {
+			-webkit-transform: translateY(-6px);
+			transform: translateY(-6px);
+		}
+
+		49.95% {
+			-webkit-transform: translateY(4px);
+			transform: translateY(4px);
+		}
+
+		66.6% {
+			-webkit-transform: translateY(-2px);
+			transform: translateY(-2px);
+		}
+
+		83.25% {
+			-webkit-transform: translateY(1px);
+			transform: translateY(1px);
+		}
+
+		100% {
+			-webkit-transform: translateY(0);
+			transform: translateY(0);
+		}
+	}
+</style>
+
+<div class="masonry">
+	<div id="app" v-clock>
+		<input type="hidden" :value="@ViewBag.Id" ref="Id" />
+		<div style="display:flex;align-items:center;">
+			<img style="max-height:80px;max-width:80px;border-radius:3px;border-style:outset;"
+				 :src=Article.ImgUrl />&nbsp;&nbsp;&nbsp;
+			<h2>${ Article.Title }</h2>
+		</div>
+		<p>${ Article.Date } <a style="float:right;color:red;" href="/Home/Articles">回看板</a></p>
+		<a class="prev" v-show="Article.Id != Prev.Id"
+		   @@click.prevent="ChangePage(Prev.Id)">
+			<i class="fa fa-chevron-left"></i>
+		</a>
+		<a class="next" v-show="Article.Id != Next.Id"
+		   @@click.prevent="ChangePage(Next.Id)">
+			<i class="fa fa-chevron-right"></i>
+		</a>
+		<hr />
+		<div v-html="content"></div>
+	</div>
+</div>
+
+@section scripts{
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
+	<script>
+		var Vue = new Vue({
+			el: '#app',
+			delimiters: ['${', '}'],
+			data: {
+				Article: {},
+				Next: {},
+				Prev: {},
+				content: ''
+			},
+			mounted() {
+				this.GetData(this.$refs.Id.value)
+			},
+			methods: {
+				GetData(Id) {
+					var self = this;
+
+					$.post('/Home/GetData',
+						{ "Id": Id },
+						function (data) {
+							data.Current.Date = moment(data.Current.Date).format("YYYY-MM-DD h:mm a");
+							self.Article = data.Current;
+							self.Next = data.Next;
+							self.Prev = data.Previous;
+							self.content = data.Current.Content;
+						}
+					);
+				},
+				ChangePage(Id) {
+					this.GetData(Id);
+					history.pushState(null, null, '/Home/Article?Id=' + Id);
+				}
+			}
+		})
+	</script>
+}
